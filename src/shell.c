@@ -25,8 +25,10 @@ void host_command(int, char **);
 void mmtest_command(int, char **);
 void test_command(int, char **);
 void _command(int, char **);
+void pwd_command(int, char**);
 
 #define MKCL(n, d) {.name=#n, .fptr=n ## _command, .desc=d}
+char pwd[20] = "/romfs/"; //current directory
 
 cmdlist cl[]={
 	MKCL(ls, "List directory"),
@@ -37,7 +39,9 @@ cmdlist cl[]={
 	MKCL(mmtest, "heap memory allocation test"),
 	MKCL(help, "help"),
 	MKCL(test, "test new function"),
+	MKCL(pwd, "print working directory"),
 	MKCL(, ""),
+
 };
 
 int parse_command(char *str, char *argv[]){
@@ -62,18 +66,31 @@ int parse_command(char *str, char *argv[]){
 }
 
 void ls_command(int n, char *argv[]){
-    fio_printf(1,"\r\n"); 
-    int dir;
-    if(n == 0){
+  //  fio_printf(1,"\r\n"); 
+//    int dir;
+   /* if(n == 0){
         dir = fs_opendir("");
     }else if(n == 1){
-        dir = fs_opendir(argv[1]);
-        //if(dir == )
+	 dir = fs_opendir(argv[1]);
+	 //if(dir == )
     }else{
         fio_printf(1, "Too many argument!\r\n");
         return;
-    }
-(void)dir;   // Use dir
+    }*/
+	if(n==1){
+		
+		 fio_printf(1, "romfs\r\n");
+		return;
+	}
+	int i;
+	for(i = 0; argv[1][i] != '\0' ; i++)
+		if(argv[1][i+1] == '\0' && argv[1][i] != '/')
+			argv[1][i+1] = '/',argv[1][i+2] = '\0';
+	int fd = fs_open(argv[1],1,O_RDONLY);
+
+	if(fd==-2)
+		fio_printf(1, "\r\ncan't find the system!\r\n");	 		
+//	(void)dir;   // Use dir
 }
 
 int filedump(const char *filename){
@@ -160,12 +177,30 @@ void help_command(int n,char *argv[]){
 	}
 }
 
+//  add string to integer
+int myStrtoInt( char *str)
+{
+	int result =0;
+	
+	while(*str !='\0')  	       //check whether a string tail
+	{
+		
+		result = result * 10 ; //become to  a ten digit or hundred digit  
+		int compare = *str - '0';    // 0 ascii code is 48 ,compare the adcii ,we can get the correct number 
+		result = result + compare ;
+		++str;
+	}
+	return(result);
+
+}
+
 void test_command(int n, char *argv[]) {
-    int handle;
+   /* int handle;
     int error;
 
     fio_printf(1, "\r\n");
-    
+    fio_printf(1, "test_hello_world!!\r\n");	    
+
     handle = host_action(SYS_SYSTEM, "mkdir -p output");
     handle = host_action(SYS_SYSTEM, "touch output/syslog");
 
@@ -183,12 +218,36 @@ void test_command(int n, char *argv[]) {
         return;
     }
 
-    host_action(SYS_CLOSE, handle);
+    host_action(SYS_CLOSE, handle);*/
+    
+    int i;
+    int sum = 0;
+    int previous = -1;
+    int result = 1;
+    	fio_printf(1, "\r\n");
+	for(i = 0; i <= myStrtoInt(argv[1]); i++)	
+ 	{
+		sum = previous + result;
+		previous = result;
+		result = sum;	
+	}
+	fio_printf(1, "Fibonacci(%d)result = %d\r\n",myStrtoInt(argv[1]),sum);
+
 }
 
 void _command(int n, char *argv[]){
     (void)n; (void)argv;
     fio_printf(1, "\r\n");
+}
+
+void pwd_command(int n,char *argv[]){
+	
+	if(n==1) {
+		fio_printf(1, "\r\n");
+		fio_printf(1, pwd);
+		fio_printf(1, "\r\n");
+	}
+	else fio_printf(1, "Too many argument!\r\n");
 }
 
 cmdfunc *do_command(const char *cmd){
