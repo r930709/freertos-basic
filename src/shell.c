@@ -32,6 +32,7 @@ void task_add();
 #define MKCL(n, d) {.name=#n, .fptr=n ## _command, .desc=d}
 char pwd[20] = "/romfs/"; //current directory
 
+
 cmdlist cl[]={
 	MKCL(ls, "List directory"),
 	MKCL(man, "Show the manual of the command"),
