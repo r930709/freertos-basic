@@ -72,8 +72,8 @@ static ssize_t stdout_write(void * opaque, const void * buf, size_t count) {
 static xSemaphoreHandle fio_sem = NULL;
 
 __attribute__((constructor)) void fio_init() {
-    memset(fio_fds, 0, sizeof(fio_fds));
-    fio_fds[0].fdread = stdin_read;
+    memset(fio_fds, 0, sizeof(fio_fds));     //file descriptor 0,1,2
+    fio_fds[0].fdread = stdin_read;         //stdin_read and stdout_wrote are function  
     fio_fds[1].fdwrite = stdout_write;
     fio_fds[2].fdwrite = stdout_write;
     fio_sem = xSemaphoreCreateMutex();
@@ -236,5 +236,6 @@ static int devfs_open_dir(void * opaque, const char * path){
 
 void register_devfs() {
     DBGOUT("Registering devfs.\r\n");
-    register_fs("dev", devfs_open, devfs_open_dir, NULL);
+    //register_fs("dev", devfs_open, devfs_open_dir, NULL );
+    register_fs("dev", devfs_open, devfs_open_dir, NULL, NULL);
 }

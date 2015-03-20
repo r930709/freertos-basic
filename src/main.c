@@ -85,7 +85,7 @@ char recv_byte()
 	while(!xQueueReceive(serial_rx_queue, &msg, portMAX_DELAY));
 	return msg;
 }
-void command_prompt(void *pvParameters)
+void command_prompt(void *pvParameters)  //make sucess will jump a command interface 
 {
 	char buf[128];
 	char *argv[20];
@@ -94,9 +94,9 @@ void command_prompt(void *pvParameters)
 	fio_printf(1, "\rWelcome to FreeRTOS Shell\r\n");
 	while(1){
                 fio_printf(1, "%s", hint);
-		fio_read(0, buf, 127);
+		fio_read(0, buf, 127);  //get command
 	
-		int n=parse_command(buf, argv);
+		int n=parse_command(buf, argv);  //implement parse command in src/shell.c 
 
 		/* will return pointer to the command function */
 		cmdfunc *fptr=do_command(argv[0]);
@@ -149,25 +149,25 @@ void system_logger(void *pvParameters)
 
 int main()
 {
-	init_rs232();
+	init_rs232();                   //initilize and enable rs232
 	enable_rs232_interrupts();
 	enable_rs232();
 	
-	fs_init();
-	fio_init();
+	fs_init();   //filesystem memory set in src/filesystem.c  
+	fio_init();  // file descriptor(0,1,2)
 	
-	register_romfs("romfs", &_sromfs);
+	register_romfs("romfs", &_sromfs);   //register filesystem
 	
 	/* Create the queue used by the serial task.  Messages for write to
 	 * the RS232. */
-	vSemaphoreCreateBinary(serial_tx_wait_sem);
+	vSemaphoreCreateBinary(serial_tx_wait_sem);  
 	/* Add for serial input 
 	 * Reference: www.freertos.org/a00116.html */
 	serial_rx_queue = xQueueCreate(1, sizeof(char));
 
     register_devfs();
-	/* Create a task to output text read from romfs. */
-	xTaskCreate(command_prompt,
+	/* Create a task to output text read from romfs. */   //create a task ,command_prompt is a function point ,a task stack size  512 bytes 
+	xTaskCreate(command_prompt,			      //task priority is 0 + 2 = 2	
 	            (signed portCHAR *) "CLI",
 	            512 /* stack size */, NULL, tskIDLE_PRIORITY + 2, NULL);
 

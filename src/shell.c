@@ -66,8 +66,9 @@ int parse_command(char *str, char *argv[]){
 }
 
 void ls_command(int n, char *argv[]){
-  //  fio_printf(1,"\r\n"); 
-//    int dir;
+  
+	 fio_printf(1,"\r\n"); 
+  	 int dir;
    /* if(n == 0){
         dir = fs_opendir("");
     }else if(n == 1){
@@ -77,20 +78,29 @@ void ls_command(int n, char *argv[]){
         fio_printf(1, "Too many argument!\r\n");
         return;
     }*/
-	if(n==1){
+	if(n == 1){
 		
-		 fio_printf(1, "romfs\r\n");
+		dir = fs_opendir(pwd);
+		if(dir == -2) fio_printf(1, "error\r\n");
+		if(dir == -1) fio_printf(1, "error\r\n");
+				
+	}
+	else if(n == 2){
+		char path[20] = "";
+		strcpy(path, pwd);
+		strcat(path, argv[1]);
+		dir = fs_opendir(path);
+		
+	
+		if(dir == -2) fio_printf(1, "error\r\n");
+		if(dir == -1) fio_printf(1, "error\r\n");
+	}
+	else{
+		fio_printf(1," Too many argument!\r\n");
 		return;
 	}
-	int i;
-	for(i = 0; argv[1][i] != '\0' ; i++)
-		if(argv[1][i+1] == '\0' && argv[1][i] != '/')
-			argv[1][i+1] = '/',argv[1][i+2] = '\0';
-	int fd = fs_open(argv[1],1,O_RDONLY);
-
-	if(fd==-2)
-		fio_printf(1, "\r\ncan't find the system!\r\n");	 		
-//	(void)dir;   // Use dir
+	 		
+	(void)dir;   // Use dir
 }
 
 int filedump(const char *filename){
@@ -255,7 +265,7 @@ cmdfunc *do_command(const char *cmd){
 	int i;
 
 	for(i=0; i<sizeof(cl)/sizeof(cl[0]); ++i){
-		if(strcmp(cl[i].name, cmd)==0)
+		if(strcmp(cl[i].name, cmd)==0)   //if match will return function pointer
 			return cl[i].fptr;
 	}
 	return NULL;	
