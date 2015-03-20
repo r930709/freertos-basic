@@ -26,6 +26,8 @@ void mmtest_command(int, char **);
 void test_command(int, char **);
 void _command(int, char **);
 void pwd_command(int, char**);
+void new_command(int, char**);
+void task_add();
 
 #define MKCL(n, d) {.name=#n, .fptr=n ## _command, .desc=d}
 char pwd[20] = "/romfs/"; //current directory
@@ -40,6 +42,7 @@ cmdlist cl[]={
 	MKCL(help, "help"),
 	MKCL(test, "test new function"),
 	MKCL(pwd, "print working directory"),
+	MKCL(new, "add two integer"),
 	MKCL(, ""),
 
 };
@@ -205,11 +208,36 @@ int myStrtoInt( char *str)
 }
 
 void test_command(int n, char *argv[]) {
-   /* int handle;
-    int error;
+    
 
-    fio_printf(1, "\r\n");
-    fio_printf(1, "test_hello_world!!\r\n");	    
+    int i;
+    int sum = 0;
+    int previous = -1;
+    int result = 1;
+
+    char string[512] = "Fibonacci";
+    char string_result[128] = "";	
+        strcat(string,"(");
+	strcat(string,argv[1]);
+	strcat(string,")");
+	strcat(string," result = "); 
+	    
+	fio_printf(1, "\r\n",string);
+	for(i = 0; i <= myStrtoInt(argv[1]); i++)	
+ 	{
+		sum = previous + result;
+		previous = result;
+		result = sum;	
+	}
+	sprintf(string_result,"%d", sum);	
+	strcat(string,string_result);
+	strcat(string,"\n");
+	fio_printf(1, "Fibonacci(%d) result = %d\r\n",myStrtoInt(argv[1]),sum);
+/*---------------------------------------------------------------------------------------------------------------*/
+    int handle;
+    int error;
+     
+    fio_printf(1, "test_fibonacci_output!!\r\n");	    
 
     handle = host_action(SYS_SYSTEM, "mkdir -p output");
     handle = host_action(SYS_SYSTEM, "touch output/syslog");
@@ -220,30 +248,17 @@ void test_command(int n, char *argv[]) {
         return;
     }
 
-    char *buffer = "Test host_write function which can write data to output/syslog\n";
-    error = host_action(SYS_WRITE, handle, (void *)buffer, strlen(buffer));
+   // char *buffer = "Test host_write function which can write data to output/syslog\n";
+    error = host_action(SYS_WRITE, handle, (void *)string, strlen(string));
     if(error != 0) {
         fio_printf(1, "Write file error! Remain %d bytes didn't write in the file.\n\r", error);
         host_action(SYS_CLOSE, handle);
         return;
     }
 
-    host_action(SYS_CLOSE, handle);*/
-    
-    int i;
-    int sum = 0;
-    int previous = -1;
-    int result = 1;
-    	fio_printf(1, "\r\n");
-	for(i = 0; i <= myStrtoInt(argv[1]); i++)	
- 	{
-		sum = previous + result;
-		previous = result;
-		result = sum;	
-	}
-	fio_printf(1, "Fibonacci(%d)result = %d\r\n",myStrtoInt(argv[1]),sum);
-
+    host_action(SYS_CLOSE, handle);
 }
+
 
 void _command(int n, char *argv[]){
     (void)n; (void)argv;
@@ -258,6 +273,34 @@ void pwd_command(int n,char *argv[]){
 		fio_printf(1, "\r\n");
 	}
 	else fio_printf(1, "Too many argument!\r\n");
+}
+
+	int input[5] = {0,0,0,0,0};
+	xTaskHandle xHandle = NULL;
+void new_command(int n,char *argv[]){
+
+	if(n!=3){
+		fio_printf(1,"\rinput error!\r\n");
+		return;
+
+	}
+	input[0] = myStrtoInt(argv[1]); 
+	input[1] = myStrtoInt(argv[2]);
+		  
+	xTaskCreate(task_add,(signed portCHAR *)"task",256,input,tskIDLE_PRIORITY ,&xHandle);
+	fio_printf(1,"\r\n");
+}
+void task_add(void *pvParameters){
+	int sum = 0;
+	char hint[] = USER_NAME "@" USER_NAME "-STM32:~$ ";
+	sum = input[0]+input[1];
+	fio_printf(1,"sum = %d\r\n",sum);
+	
+	fio_printf(1,"%s",hint);
+	
+	vTaskSuspend(xHandle);
+	
+
 }
 
 cmdfunc *do_command(const char *cmd){

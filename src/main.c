@@ -114,14 +114,27 @@ void system_logger(void *pvParameters)
     char output[512] = {0};
     char *tag = "\nName          State   Priority  Stack  Num\n*******************************************\n";
     int handle, error;
-    const portTickType xDelay = 100000 / 100;
+    const portTickType xDelay = 100000 / 300;
+    char hint[] = USER_NAME "@" USER_NAME "-STM32:~$ ";
 
-    handle = host_action(SYS_OPEN, "output/syslog", 4);
-    if(handle == -1) {
-        fio_printf(1, "Open file error!\n");
-        return;
-    }
-
+   handle = host_action(SYS_OPEN, "output_ps/syslog_ps", 4);
+    if(handle == -1) 
+     {  fio_printf(1, "Open file error! and create new one \r\n");
+      
+       handle = host_action(SYS_SYSTEM, "mkdir -p output_ps");
+       handle = host_action(SYS_SYSTEM, "touch output_ps/syslog_ps");
+       handle = host_action(SYS_OPEN, "output_ps/syslog_ps",4);
+	if(handle == -1)  
+	{	fio_printf(1, "Create file error\r\n");
+		return;
+    	}
+	else{	
+		fio_printf(1, "Create file sucess\r\n");
+		fio_printf(1, "%s",hint);
+	    }
+     }
+	
+	
     while(1) {
         memcpy(output, tag, strlen(tag));
         error = host_action(SYS_WRITE, handle, (void *)output, strlen(output));
@@ -171,12 +184,12 @@ int main()
 	            (signed portCHAR *) "CLI",
 	            512 /* stack size */, NULL, tskIDLE_PRIORITY + 2, NULL);
 
-#if 0
+
 	/* Create a task to record system log. */
 	xTaskCreate(system_logger,
 	            (signed portCHAR *) "Logger",
 	            1024 /* stack size */, NULL, tskIDLE_PRIORITY + 1, NULL);
-#endif
+
 
 	/* Start running the tasks. */
 	vTaskStartScheduler();
