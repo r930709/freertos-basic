@@ -14,7 +14,7 @@ struct fs_t {
     uint32_t hash;
     fs_open_t cb;
     fs_open_dir_t dcb;
-    fs_check_dir_t ccb; //add	
+//    fs_check_dir_t ccb; //add,colin code	
     void * opaque;
 };
 
@@ -24,8 +24,8 @@ __attribute__((constructor)) void fs_init() {
     memset(fss, 0, sizeof(fss));   // filesystem memory set
 }
 
-//int register_fs(const char * mountpoint, fs_open_t callback, fs_open_dir_t dir_callback, void * opaque) {
-int register_fs(const char * mountpoint, fs_open_t callback, fs_open_dir_t dir_callback, fs_check_dir_t check_callback , void * opaque) {
+int register_fs(const char * mountpoint, fs_open_t callback, fs_open_dir_t dir_callback, void * opaque) {
+//int register_fs(const char * mountpoint, fs_open_t callback, fs_open_dir_t dir_callback, fs_check_dir_t check_callback , void * opaque) { colin code
   
   int i;
     DBGOUT("register_fs(\"%s\", %p, %p, %p)\r\n", mountpoint, callback, dir_callback, opaque);
@@ -35,7 +35,7 @@ int register_fs(const char * mountpoint, fs_open_t callback, fs_open_dir_t dir_c
             fss[i].hash = hash_djb2((const uint8_t *) mountpoint, -1);
             fss[i].cb = callback;
             fss[i].dcb = dir_callback;
-	    fss[i].ccb = check_callback; //add	
+	   // fss[i].ccb = check_callback; //add,colin code	
             fss[i].opaque = opaque;
             return 0;
         }
@@ -105,8 +105,8 @@ int fs_opendir(const char * path){
 
     return OPENDIR_NOTFOUNDFS;
 }
-
-//add
+/*
+//add,colin code
 int fs_checkdir(const char * path){
     const char * slash;
     uint32_t hash;
@@ -138,4 +138,4 @@ int fs_checkdir(const char * path){
     }    
 
     return -1;
-}
+}*/

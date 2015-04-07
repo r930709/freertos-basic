@@ -8,19 +8,20 @@
 #include <dirent.h>
 #include <string.h>
 
+
 #define hash_init 5381
 
 uint32_t hash_djb2(const uint8_t * str, uint32_t hash) {
     int c;
 
     while ((c = *str++))
-        hash = ((hash << 5) + hash) ^ c;
+        hash = ((hash << 5) + hash) ^ c;   /* hash * 33 + c  */
 
     return hash;
 }
 
 void usage(const char * binname) {
-    printf("Usage: %s [-d <dir>] [outfile]\n", binname);
+    printf("Usage: %s [-d <dir>] [outfile] \n", binname);
     exit(-1);
 }
 
@@ -45,6 +46,27 @@ void processdir(DIR * dirp, const char * curpath, FILE * outfile, const char * p
     #else
         if (ent->d_type == DT_DIR) {
     #endif
+/*-----------------make the directory can be stored in romfs , then when using ls command ,the directory name can be printed out*/		
+            hash = hash_djb2((const uint8_t *)ent->d_name, cur_hash);
+		
+	    b = (hash >>  0) & 0xff; fwrite(&b, 1, 1, outfile);
+            b = (hash >>  8) & 0xff; fwrite(&b, 1, 1, outfile);
+            b = (hash >> 16) & 0xff; fwrite(&b, 1, 1, outfile);
+            b = (hash >> 24) & 0xff; fwrite(&b, 1, 1, outfile);
+            size = strlen(ent->d_name) + 1 + 1;
+            
+            b = (size >>  0) & 0xff; fwrite(&b, 1, 1, outfile);
+            b = (size >>  8) & 0xff; fwrite(&b, 1, 1, outfile);
+            b = (size >> 16) & 0xff; fwrite(&b, 1, 1, outfile);
+            b = (size >> 24) & 0xff; fwrite(&b, 1, 1, outfile);
+            b = (cur_hash >>  0) & 0xff; fwrite(&b, 1, 1, outfile);
+            b = (cur_hash >>  8) & 0xff; fwrite(&b, 1, 1, outfile);
+            b = (cur_hash >> 16) & 0xff; fwrite(&b, 1, 1, outfile);
+            b = (cur_hash >> 24) & 0xff; fwrite(&b, 1, 1, outfile); 
+            fwrite(ent->d_name,strlen(ent->d_name),1,outfile);
+            b = 0;fwrite(&b,1,1,outfile);
+            b = 1;fwrite(&b,1,1,outfile);
+
             if (strcmp(ent->d_name, ".") == 0)
                 continue;
             if (strcmp(ent->d_name, "..") == 0)
@@ -61,7 +83,9 @@ void processdir(DIR * dirp, const char * curpath, FILE * outfile, const char * p
                 perror("opening input file");
                 exit(-1);
             }
-            b = (hash >>  0) & 0xff; fwrite(&b, 1, 1, outfile);
+
+	
+	    b = (hash >>  0) & 0xff; fwrite(&b, 1, 1, outfile);
             b = (hash >>  8) & 0xff; fwrite(&b, 1, 1, outfile);
             b = (hash >> 16) & 0xff; fwrite(&b, 1, 1, outfile);
             b = (hash >> 24) & 0xff; fwrite(&b, 1, 1, outfile);
@@ -95,14 +119,16 @@ void processdir(DIR * dirp, const char * curpath, FILE * outfile, const char * p
 }
 
 int main(int argc, char ** argv) {
+	printf("%s | %s | %s | %s \n",*argv,*(argv+1),*(argv+2),*(argv+3));
     char * binname = *argv++;
     char * o;
     char * outname = NULL;
     char * dirname = ".";
     uint64_t z = 0;
     FILE * outfile;
-    DIR * dirp;
-
+    DIR * dirp; 
+	
+	printf(" %s | %s | %s | %s | %s |\n",binname,argv[0],argv[1],argv[2],argv[3]);	
     while ((o = *argv++)) {
         if (*o == '-') {
             o++;

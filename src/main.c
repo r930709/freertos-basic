@@ -90,7 +90,13 @@ void command_prompt(void *pvParameters)  //make sucess will jump a command inter
 	char buf[128];
 	char *argv[20];
     char hint[] = USER_NAME "@" USER_NAME "-STM32:~$ ";
-
+/*-----------data from the queue(queue_data_work) and print out the result---------------*/
+	int func,in,out;
+	xQueueHandle *print_queue;
+	print_queue = get_queue_handle();
+	
+/*---------------------------------------------------------------------------------------*/
+	
 	fio_printf(1, "\rWelcome to FreeRTOS Shell\r\n");
 	while(1){
                 fio_printf(1, "%s", hint);
@@ -104,6 +110,35 @@ void command_prompt(void *pvParameters)  //make sucess will jump a command inter
 			fptr(n, argv);
 		else
 			fio_printf(2, "\r\n\"%s\" command not found.\r\n", argv[0]);
+/*---------------------------------------------------------------------------------------------------------*/
+		
+	if(*print_queue != NULL){
+		if( xQueueReceive( *print_queue, &(func), (portTickType)10) == pdTRUE){
+			do{
+				
+			while(xQueueReceive( *print_queue, &(in), (portTickType) 10) != pdTRUE){}
+				
+			while(xQueueReceive( *print_queue, &(out), (portTickType) 10) != pdTRUE){}
+			
+			if(func == 0){ fio_printf(1,"work ok!!the fibonacci(%d) is %d \r\n",in,out);}
+			else if(func == 1){
+				
+				if(out == 1){	fio_printf(1,"work ok!! %d is the composite number \r\n",in);}
+
+				else{	fio_printf(1,"work ok!! %d is the prime number\r\n",in);}
+							
+			}
+
+			else if(func == 2){ 
+				fio_printf(1,"work ok!! the %dth prime number is %d\r\n",in,out);
+			
+			}	
+			
+			}while(xQueueReceive( *print_queue, &(func), (portTickType) 1) == pdTRUE);
+		}	
+	
+	}
+
 	}
 
 }
