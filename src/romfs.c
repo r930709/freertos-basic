@@ -18,14 +18,16 @@ struct romfs_fds_t {
 
 static struct romfs_fds_t romfs_fds[MAX_FDS];
 
-static uint32_t get_unaligned(const uint8_t * d) {
+static uint32_t get_unaligned(const uint8_t * d)
+{
     return ((uint32_t) d[0]) | ((uint32_t) (d[1] << 8)) | ((uint32_t) (d[2] << 16)) | ((uint32_t) (d[3] << 24));
 }
 
-static ssize_t romfs_read(void * opaque, void * buf, size_t count) {
+static ssize_t romfs_read(void * opaque, void * buf, size_t count)
+{
     struct romfs_fds_t * f = (struct romfs_fds_t *) opaque;
     uint32_t size = f -> size;
-    
+
     if ((f->cursor + count) > size)
         count = size - f->cursor;
 
@@ -35,23 +37,24 @@ static ssize_t romfs_read(void * opaque, void * buf, size_t count) {
     return count;
 }
 
-static off_t romfs_seek(void * opaque, off_t offset, int whence) {
+static off_t romfs_seek(void * opaque, off_t offset, int whence)
+{
     struct romfs_fds_t * f = (struct romfs_fds_t *) opaque;
-    uint32_t size = f->size; 
+    uint32_t size = f->size;
     uint32_t origin;
-    
+
     switch (whence) {
-    case SEEK_SET:
-        origin = 0;
-        break;
-    case SEEK_CUR:
-        origin = f->cursor;
-        break;
-    case SEEK_END:
-        origin = size;
-        break;
-    default:
-        return -1;
+        case SEEK_SET:
+            origin = 0;
+            break;
+        case SEEK_CUR:
+            origin = f->cursor;
+            break;
+        case SEEK_END:
+            origin = size;
+            break;
+        default:
+            return -1;
     }
 
     offset = origin + offset;
@@ -66,7 +69,8 @@ static off_t romfs_seek(void * opaque, off_t offset, int whence) {
     return offset;
 }
 
-const uint8_t * romfs_get_file_by_hash(const uint8_t * romfs, uint32_t h, uint32_t * len) {
+const uint8_t * romfs_get_file_by_hash(const uint8_t * romfs, uint32_t h, uint32_t * len)
+{
     const uint8_t * meta;
 
     for (meta = romfs; get_unaligned(meta) && get_unaligned(meta + 4); meta += get_unaligned(meta + 4) + 12) {
@@ -81,7 +85,8 @@ const uint8_t * romfs_get_file_by_hash(const uint8_t * romfs, uint32_t h, uint32
     return NULL;
 }
 
-static int romfs_open(void * opaque, const char * path, int flags, int mode) {
+static int romfs_open(void * opaque, const char * path, int flags, int mode)
+{
     uint32_t h = hash_djb2((const uint8_t *) path, -1);
     const uint8_t * romfs = (const uint8_t *) opaque;
     const uint8_t * file;
@@ -106,100 +111,66 @@ static int romfs_open(void * opaque, const char * path, int flags, int mode) {
     return r;
 }
 
-static int romfs_open_dir(void * opaque, const char * path){
-	uint32_t h = hash_djb2((const uint8_t *)path, -1);
+static int romfs_open_dir(void * opaque, const char * path)
+{
+    uint32_t h = hash_djb2((const uint8_t *)path, -1);
 
-	const uint8_t * romfs = (const uint8_t *) opaque;
-	const uint8_t * meta;
-	const uint8_t * file;
-	int r = -1;
-	int count ;
-	char buff[128];
-	int result = 0;
-
-	for(meta=romfs; get_unaligned(meta) && get_unaligned(meta+4); meta += get_unaligned(meta+4)+12){
-	  if(get_unaligned(meta+8) == h){
-		
-		file = meta +12;
-		r = fio_open(romfs_read,NULL,romfs_seek,NULL,NULL);
-		if(r>0){
-			const uint8_t *filestart = file;
-			while(*filestart)  ++filestart;
-			uint32_t size = filestart - file;
-			romfs_fds[r].file = file;
-			romfs_fds[r].cursor = 0;
-			romfs_fds[r].size = size;
-			fio_set_opaque(r, romfs_fds +r);
-			while((count = fio_read(r,buff,sizeof(buff)))>0){
-				fio_write(1,buff,count);
-			}
-
-		}
-			fio_close(r);
-			r=-1;		
-			fio_printf(1,"    ");
-			result ++;
-		}
-	
-
-	}	
-
-	return result;
-}
-/* colin code
-static int romfs_ls(void * opaque, const char * path) {
-    uint32_t h = hash_djb2((const uint8_t *) path, -1);
     const uint8_t * romfs = (const uint8_t *) opaque;
+    const uint8_t * meta;
+    const uint8_t * file;
+#if 0
     int r = -1;
 
-    const uint8_t * meta;
+    int count ;
+    char buff[128];
 
-    for(meta = romfs ; get_unaligned(meta) && get_unaligned(meta+4); meta += get_unaligned(meta + 4) + 12) {
-	if(get_unaligned(meta+8) == h ){
-		char name[256];
-		for(int i = 0; i <256; i++){
-			if(!(*(name+i) = *(meta+12+i))) break;	
-		}
-			fio_printf(1, name);
-			fio_printf(1, "\r\n");
-			r = 1;
-		}
-	   }	
-		return r;	
-	
-	}
+    int result = 0;
 
-	    
+    for(meta=romfs; get_unaligned(meta) && get_unaligned(meta+4); meta += get_unaligned(meta+4)+12) {
+        if(get_unaligned(meta+8) == h) {
 
-static int romfs_check(void * opaque, const char * path) {
-    uint32_t h = hash_djb2((const uint8_t *) path, -1);
-    const uint8_t * romfs = (const uint8_t *) opaque;
-    
+            file = meta +12;
+            r = fio_open(romfs_read,NULL,romfs_seek,NULL,NULL);
+            if(r>0) {
+                const uint8_t *filestart = file;
+                while(*filestart)  ++filestart;
+                uint32_t size = filestart - file;
+                romfs_fds[r].file = file;
+                romfs_fds[r].cursor = 0;
+                romfs_fds[r].size = size;
+                fio_set_opaque(r, romfs_fds +r);
+                while((count = fio_read(r,buff,sizeof(buff)))>0) {
+                    fio_write(1,buff,count);
+                }
 
-    const uint8_t * meta;
+            }
+            fio_close(r);
+            r=-1;
+            fio_printf(1,"    ");
+            result ++;
+        }
 
-    for(meta = romfs ; get_unaligned(meta) && get_unaligned(meta+4); meta += get_unaligned(meta + 4) + 12) {
-	if(get_unaligned(meta+8) == h ){
-		return 1;
-	  }
-	}
-	return 0;
-}*/
-    
-/*  //original 
-void register_romfs(const char * mountpoint, const uint8_t * romfs) {
-//    DBGOUT("Registering romfs `%s' @ %p\r\n", mountpoint, romfs);
-    register_fs(mountpoint, romfs_open, NULL, (void *) romfs);
-}*/
 
-/*  //colin code
-void register_romfs(const char * mountpoint, const uint8_t * romfs) {
-	register_fs(mountpoint, romfs_open, romfs_ls, romfs_check, (void *) romfs);
+    }
+#endif
 
-}*/
+    int result = 0;
+    for(meta=romfs; get_unaligned(meta) && get_unaligned(meta+4); meta += get_unaligned(meta+4)+12) {
+        if(get_unaligned(meta+8) == h) {
 
-void register_romfs(const char * mountpoint, const uint8_t * romfs) {
-//    DBGOUT("Registering romfs `%s' @ %p\r\n", mountpoint, romfs);
+            file = meta +12;
+            fio_printf(1,"%s",file);
+            fio_printf(1,"    ");
+        }
+        result++;
+
+    }
+    return result;
+}
+
+void register_romfs(const char * mountpoint, const uint8_t * romfs)
+{
+    DBGOUT("Registering romfs `%s' @ %p\r\n", mountpoint, romfs);
     register_fs(mountpoint, romfs_open, romfs_open_dir, (void *) romfs);
 }
 
